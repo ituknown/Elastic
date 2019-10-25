@@ -111,3 +111,88 @@ $ curl -XDELETE "localhost:9200/customer?pretty&pretty"
   "acknowledged" : true
 }
 ```
+
+# 扩展说明
+
+Elastic 不要求必须要有索引才能存放数据。事实上，在添加文档时如果索引不存在会自行创建索引。下面来验证下：
+
+先列出本机所有索引：
+
+```bash
+$ curl -XGET "localhost:9200/_cat/indices?pretty&pretty"
+```
+
+```
+green open .watcher-history-7-2019.10.25 d4zSGgcKT1CDV6LGbTar8Q 1 0    90   0  126.7kb  126.7kb
+green open .watches                      Bptdm6_ASx69bYYJ495nvw 1 0     6   0   83.5kb   83.5kb
+green open .monitoring-es-6-2019.10.25   3-Km-OaRQZ20NVJN8tDxqA 1 0  1231 104 1011.3kb 1011.3kb
+green open .monitoring-alerts-6          Qb7JbFCNTy-l-lAyBiMADg 1 0     1   0    6.4kb    6.4kb
+green open .watcher-history-7-2019.10.21 rC7xOKLQTXaDLDLV_cQ05Q 1 0  2758   0    3.4mb    3.4mb
+green open .kibana                       G6D_RxaGR5CGeHKdGp_GKw 1 0     1   0      4kb      4kb
+green open .triggered_watches            9H35HOwtTUCGcjrH2lI3bQ 1 0     0   0  123.2kb  123.2kb
+green open .monitoring-es-6-2019.10.23   L_QsqDKFS6GibnIkYa2IKg 1 0  1548  18  893.9kb  893.9kb
+green open .watcher-history-7-2019.10.24 -708MKfjSvqvi6Q5Dj6cKQ 1 0   234   0  348.1kb  348.1kb
+green open .monitoring-es-6-2019.10.22   iygh5IibSbaFDxTE9RyQOA 1 0 14941  35    5.9mb    5.9mb
+green open .monitoring-es-6-2019.10.24   gh3afcsRTZmAnQTkUz8N3A 1 0  2823  77    1.7mb    1.7mb
+green open .watcher-history-7-2019.10.22 zfWVREXaT8GWMnKPZkQDbw 1 0  1590   0    1.7mb    1.7mb
+green open .watcher-history-7-2019.10.23 RSGz4iW1TR6wKfgYUmVXfw 1 0   192   0  325.2kb  325.2kb
+```
+
+本机器当前已有的索引属于 Elastic 内部索引（使用 `kibana` 以及 `logstack` 创建文档数据后就会 Elastic 主动创建这些索引），现在我们要创建的索引
+名称为 `theme`，不过我们不会调用 `POST /<Index` API，而是以添加文档数据的形式：
+
+```bash
+$ curl -XPOST "localhost:9200/theme/_doc?pretty&pretty" -H "Content-Type: application/json" -d'
+{
+  "name": "Bob",
+  "country": "America"
+}'
+```
+
+上面的语句意思是在索引 `theme` 创建一个名为 `_doc` 类型的文档，向该文档中新增一条 JSON 格式数据。数据包含用于名称与国家，现在执行。
+
+输出结果如下：
+
+```json
+{
+  "_index" : "theme",
+  "_type" : "_doc",
+  "_id" : "tlfYAW4BcNwnFQPz_yBb",
+  "_version" : 1,
+  "result" : "created",
+  "_shards" : {
+    "total" : 2,
+    "successful" : 1,
+    "failed" : 0
+  },
+  "_seq_no" : 0,
+  "_primary_term" : 1
+}
+```
+
+从返回的信息中可以看到：索引为 `theme`，类型为：`_doc`。并且 Elastic 主动创建了文档数据的 `id`：`tlfYAW4BcNwnFQPz_yBb`。
+
+先不看数据是否创建成功，来看下索引是否成功创建：
+
+```bash
+$ curl -XGET "localhost:9200/_cat/indices?pretty&pretty"
+```
+
+```
+green  open .watcher-history-7-2019.10.25 d4zSGgcKT1CDV6LGbTar8Q 1 0   154   0 285.1kb 285.1kb
+green  open .watches                      Bptdm6_ASx69bYYJ495nvw 1 0     6   0  75.2kb  75.2kb
+green  open .monitoring-es-6-2019.10.25   3-Km-OaRQZ20NVJN8tDxqA 1 0  2328 138   1.4mb   1.4mb
+green  open .monitoring-alerts-6          Qb7JbFCNTy-l-lAyBiMADg 1 0     1   0  12.3kb  12.3kb
+green  open .watcher-history-7-2019.10.21 rC7xOKLQTXaDLDLV_cQ05Q 1 0  2758   0   3.4mb   3.4mb
+green  open .kibana                       G6D_RxaGR5CGeHKdGp_GKw 1 0     1   0     4kb     4kb
+green  open .triggered_watches            9H35HOwtTUCGcjrH2lI3bQ 1 0     0   0 123.2kb 123.2kb
+yellow open theme                         XFijZlW2RfmdWkJ53oDI0A 5 1     1   0   4.8kb   4.8kb
+green  open .monitoring-es-6-2019.10.23   L_QsqDKFS6GibnIkYa2IKg 1 0  1548  18 893.9kb 893.9kb
+green  open .watcher-history-7-2019.10.24 -708MKfjSvqvi6Q5Dj6cKQ 1 0   234   0 348.1kb 348.1kb
+green  open .monitoring-es-6-2019.10.22   iygh5IibSbaFDxTE9RyQOA 1 0 14941  35   5.9mb   5.9mb
+green  open .monitoring-es-6-2019.10.24   gh3afcsRTZmAnQTkUz8N3A 1 0  2823  77   1.7mb   1.7mb
+green  open .watcher-history-7-2019.10.22 zfWVREXaT8GWMnKPZkQDbw 1 0  1590   0   1.7mb   1.7mb
+green  open .watcher-history-7-2019.10.23 RSGz4iW1TR6wKfgYUmVXfw 1 0   192   0 325.2kb 325.2kb
+```
+
+在输出的索引列表中可以看到 `theme`，说明在向文档中插入数据时 Elastic 并不强制要求指定索引一定存在，这点与 `MongoDB` 类似。
