@@ -1,6 +1,6 @@
 # 前言
 
-Elasticsearch 分为解压版（`tar.gz`）以及包管理安装版（二进制安装版）两个安装版本，本篇会分别进行介绍，不过在实际使用中我更喜欢使用解压版。
+Elasticsearch 分为解压版（`tar.gz`）以及包管理安装版两个安装版本，本篇会分别进行介绍。
 
 Elasticsearch 更新周期很快，而且每个 Release 版本都会增加一些特性，所以安装时建议安装最新 Release 版本，可以点击链接查看所有 Release 版本列表：[Release 版本文档列表](https://www.elastic.co/guide/en/elastic-stack/index.html)
 
@@ -8,7 +8,7 @@ Elasticsearch 更新周期很快，而且每个 Release 版本都会增加一些
 
 本文我们要安装的产品是 Elasticsearch，选择对应的产品后进入安装介绍页面即可。在这个页面就会看到对应各操作系统以及各自的安装方式，比如 Linux 就提供了基于解压版本的 `tar.gz` 文件以及各种发行 Linux 的包管理安装方式。
 
-现在来一一介绍。
+相比将而言，包管理安装版更加简单，现在来一一介绍。
 
 # 解压版安装
 
@@ -153,7 +153,7 @@ sudo chmod 774 /var/es
 
 另外，Elasticsearch 有几个硬性要求。系统允许打开的线程数至少值为 4096，允许操作的文件句柄至少为 65535。
 
-所以，我们需要进行设置一下。修改 `etc/security/limits.conf` 文件
+所以，我们需要进行设置一下。修改 `/etc/security/limits.conf` 文件
 
 ```bash
 sudo vim /etc/security/limits.conf
@@ -204,21 +204,220 @@ es         8748      1  1 14:14 pts/0    00:02:11 //opt/elastic/es/jdk/bin/java 
 es         8764   8748  0 14:14 pts/0    00:00:00 /opt/elastic/es/modules/x-pack-ml/platform/linux-x86_64/bin/controller
 ```
 
-现在使用 curl 请求测试一下：
+现在来测试一下运行状态：
 
 ```bash
-$ curl -XGET "localhost:9200/_cat/health?v"
-epoch      timestamp cluster       status node.total node.data shards pri relo init unassign pending_tasks max_task_wait_time active_shards_percent
-1606018039 04:07:19  elasticsearch green           1         1      0   0    0    0        0             0                  -                100.0%
+$ curl -X GET "localhost:9200/?pretty"
+{
+  "name" : "es-1",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "iCVXpDPITbe58j3-QUdGMA",
+  "version" : {
+    "number" : "7.5.2",
+    "build_flavor" : "default",
+    "build_type" : "tar",
+    "build_hash" : "8bec50e1e0ad29dad5653712cf3bb580cd1afcdf",
+    "build_date" : "2020-01-15T12:11:52.313576Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.3.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
 ```
 
-如果得到上面的输出即表示成功运行，到此基于解压版的安装方式就说完了。
+如果得到类似上面的输出即表示正常运行，到此基于解压版的安装方式就说完了。
 
-| 我的 status 对应的状态值不是 green？                         |
+
+
+# 包管理安装版
+
+包管理安装版安装起来比解压版安装的更加简单。同样的，官网提供了基于包管理的安装介绍。比如 7.5 版本：
+
+https://www.elastic.co/guide/en/elasticsearch/reference/7.5/rpm.html
+
+## 下载签名key
+
+首先我们需要使用 rpm 命令将签名key下载到本地：
+
+```bash
+rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+```
+
+## 创建 YUM 源
+
+在 `/etc/yum.repo.d` 目录下创建一个 Ealsticsearch 的源文件，文件名随意，比如 `Elasticsearch.repo`。内容如下：
+
+```
+[elasticsearch]
+name=Elasticsearch repository for 7.x packages
+baseurl=https://artifacts.elastic.co/packages/7.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=0
+autorefresh=1
+type=rpm-md
+```
+
+当然，上面是的 Elasticstack 官网提供的 repo。这个只能给那些对自己网络够自信的或有梯子的同学而言的。我不够自信，所以我选择清华镜像站：
+
+```
+[elasticsearch]
+name=Elasticsearch repository for 7.x packages
+baseurl=https://mirrors.tuna.tsinghua.edu.cn/elasticstack/7.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=0
+autorefresh=1
+type=rpm-md
+```
+
+| Note                                                         |
 | :----------------------------------------------------------- |
-| 这个不用担心，你的可能是 yellow。这个是因为集群问题或某些数据存在问题，这个并不影响使用。 |
+| 上面的两个 repo 配置没有什么区别，功能一样。只是由于 Elastic 是国外产品，所以下载的会很慢。不过我们大中华地区有相应的镜像站，鼎鼎大名的可能就是 [清华大学镜像站](https://mirrors.tuna.tsinghua.edu.cn) 了，当然你也可以选择 [网易163](http://mirrors.163.com/) 和 [阿里镜像站](http://mirrors.aliyun.com/)。 |
+
+## 安装
+
+上面都设置好之后安装起来就很简单了，只需一条命令：
+
+```bash
+sudo yum install -y --enablerepo=elasticsearch elasticsearch
+```
+
+静静的等待安装，安装过程可能需要个几分钟，这个就要看个人网络了。
 
 
+## 关于配置文件
 
-# 包管理安装版（二进制安装版）
+安装成功后就来说下包管理安装的配置文件。这里基本上与解压版雷同，可以直接参考解压版的修改方式。区别主要是 Elasticsearch 的配置文件，使用包管理安装的配置文件都存储在 `/etc/elasticsearch` 目录下：
+
+```bash
+$ ls /etc/elasticsearch
+elasticsearch.keystore  jvm.options    log4j2.properties  roles.yml  users_roles
+elasticsearch.yml       jvm.options.d  role_mapping.yml   users
+```
+
+而且，除了 JVM 参数我们也不需要做额外的修改。甚至启动参数也根据需要做了修改，比如允许最大打开的文件句柄数等等。可以直接在启动服务文件中查看：
+
+```bash
+cat /usr/lib/systemd/system/elasticsearch.service
+```
+
+有关包管理的数据存储于配置可以参考 7.5 版本的官网说明：https://www.elastic.co/guide/en/elasticsearch/reference/7.5/rpm.html#rpm-layout。
+
+## 系统管理
+
+现在我们就可以直接使用系统管理命令来控制 Elasticsearch。先来看下你的系统使用的是 `init` 还是 `systemd`：
+
+```bash
+$ ps -p 1
+   PID TTY          TIME CMD
+     1 ?        00:00:03 systemd
+```
+
+看输出中的 CMD 信息就能得到自己系统的管理工具。下面的说明根据自己系统进行选择。
+
+### 开机自启
+
+Elasticsearch 默认是不启动的，我们可以选择设置为开机自启。
+
+**`init` 用户：**
+
+```bash
+sudo chkconfig --add elasticsearch
+```
+
+**`systemd` 用户：**
+
+```bash
+sudo /bin/systemctl daemon-reload
+sudo /bin/systemctl enable elasticsearch.service
+```
+
+### 服务启动
+
+**`init` 用户：**
+
+```bash
+sudo -i service elasticsearch start
+```
+
+**`systemd` 用户：**
+
+```bash
+sudo systemctl start elasticsearch.service
+```
+
+### 服务停止
+
+**`init` 用户：**
+
+```bash
+sudo -i service elasticsearch stop
+```
+
+**`systemd` 用户：**
+
+```bash
+sudo systemctl stop elasticsearch.service
+```
+
+### 查看服务状态
+
+**`init` 用户：**
+
+```bash
+sudo -i service elasticsearch status
+```
+
+**`systemd` 用户：**
+
+```bash
+sudo systemctl status elasticsearch.service
+```
+
+## 运行测试
+
+服务启动后就来看下服务状态：
+
+```bash
+$ sudo systemctl status elasticsearch
+● elasticsearch.service - Elasticsearch
+   Loaded: loaded (/usr/lib/systemd/system/elasticsearch.service; enabled; vendor preset: disabled)
+   Active: active (running) since Sun 2020-11-22 13:11:31 CST; 2min 4s ago
+     Docs: https://www.elastic.co
+ Main PID: 9920 (java)
+   CGroup: /system.slice/elasticsearch.service
+           ├─ 9920 /usr/share/elasticsearch/jdk/bin/java -Xshare:auto -Des.networkaddress.cache.ttl=60 -Des.networka...
+           └─10109 /usr/share/elasticsearch/modules/x-pack-ml/platform/linux-x86_64/bin/controller
+
+Nov 22 13:11:10 es-2 systemd[1]: Starting Elasticsearch...
+Nov 22 13:11:31 es-2 systemd[1]: Started Elasticsearch.
+```
+
+看输出一切正常，再来使用 curl 请求测试一下：
+
+```bash
+$ curl -X GET "localhost:9200/?pretty"
+{
+  "name" : "es-2",
+  "cluster_name" : "elasticsearch",
+  "cluster_uuid" : "4CHrkczxRySxs89XCyFGRg",
+  "version" : {
+    "number" : "7.10.0",
+    "build_flavor" : "default",
+    "build_type" : "rpm",
+    "build_hash" : "51e9d6f22758d0374a0f3f5c6e8f3a7997850f96",
+    "build_date" : "2020-11-09T21:30:33.964949Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.7.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+```
+
+如果得到类似上面的输出即表示正常运行。
 
