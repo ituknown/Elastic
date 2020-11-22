@@ -1,10 +1,8 @@
 # 前言
 
-Elastic 提供批处理（`batch processing`）功能，这对于大批量数据处理提供了更佳的处理方式。
+Elasticsearch 提供批处理（`batch processing`）功能，这对于大批量数据处理提供了更佳的处理方式，批处理的优点就不用说了。
 
-如在前面我们在操作文档数据时都是一条一条增加，删除同样如此。
-
-Elastic 的批处理使用的是 `_bulk` API，通常数据格式如下所示：
+如在前面我们在操作文档数据时都是一条一条增加，删除同样如此。Elasticsearch 的批处理使用的是 `_bulk` API，通常数据格式如下所示：
 
 ```
 POST /<Index>/<Type>/_bulk?pretty
@@ -24,8 +22,8 @@ POST /<Index>/<Type>/_bulk?pretty
 
 看下下面的示例：
 
-```
-curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Type: application/json' -d'
+```bash
+$ curl -X POST "localhost:9200/bank/customer/_bulk?pretty&pretty" -H 'Content-Type: application/json' -d'
 {"index":{"_id":"1"}}
 {"name": "John Doe" }
 {"index":{"_id":"2"}}
@@ -38,25 +36,23 @@ curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Type
 
 这个语句的含义是：
 
-在索引 `customer` 下，创建（如果 `ID` 已存在就是替换）文档数据并指定 `ID` 为 1，该文档数据的值为 `{"name": "John Doe" }`。
-接着继续创建 `ID` 为 2 的文档数据。
-下面一个是 `update` 操作，该语句的意思是将文档 `ID` 为 1 的数据中的 `name` 的值修改为 `John Doe's sister`。
-最后是删除操作，将文档数据 `ID` 为 2 的数据删除。
+在索引 bank 下，创建（如果 `ID` 已存在就是替换）文档数据 customer 并指定 `ID` 为 1，该文档数据的值为 `{"name": "John Doe" }`。
+接着继续创建（如果 `ID` 已存在就是替换） `ID` 为 2 的文档数据。下面一个是 `update` 操作，该语句的意思是将文档 `ID` 为 1 的数据中的 `name` 的值修改为 `John Doe's sister`。最后是删除操作，将文档数据 `ID` 为 2 的数据删除。
 
 下面来看下实例。
 
 # 批量新增
 
-在之前先将已存在的索引 `customer` 删掉，便于下面的说明。
+在之前先将已存在的索引 `bank` 删掉，便于下面的说明。
 
 ```bash
-$ curl -XDELETE "localhost:9200/customer?pretty&pretty"
+$ curl -XDELETE "localhost:9200/bank?pretty"
 ```
 
 现在开始批量增加数据（其实就两条，便于演示）：
 
 ```bash
-$ curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Type: application/json' -d'
+$ curl -X POST "localhost:9200/bank/customer/_bulk?pretty" -H 'Content-Type: application/json' -d'
 {"index":{"_id":"1"}}
 {"name": "John Doe" }
 {"index":{"_id":"2"}}
@@ -64,49 +60,51 @@ $ curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Ty
 '
 ```
 
-> 虽然 `customer` 索引被删除，但是 Elastic 并不强制要求新增文档数据时指定索引一定存在。Elastic 会根据需要自行创建。
+| 说明                                                         |
+| :----------------------------------------------------------- |
+| 虽然索引 bank 在第一步已经被删除，但是 Elasticsearch 并不强制要求新增文档数据时指定索引一定存在，Elasticsearch 会根据需要自行创建。 |
 
 执行完成后来使用 `_search` 命令查看下数据：
 
 ```bash
-$ curl -XGET "localhost:9200/customer/_doc/_search?pretty&pretty"
+$ curl -XGET "localhost:9200/bank/customer/_search?pretty"
 ```
 
 输出结果如下：
 
 ```json
 {
-  "took" : 0,
+  "took" : 51,
   "timed_out" : false,
   "_shards" : {
-    "total" : 5,
-    "successful" : 5,
+    "total" : 1,
+    "successful" : 1,
     "skipped" : 0,
     "failed" : 0
   },
   "hits" : {
-    "total" : 2,
+    "total" : {
+      "value" : 2,
+      "relation" : "eq"
+    },
     "max_score" : 1.0,
-    "hits" : [
-      {
-        "_index" : "customer",
-        "_type" : "_doc",
-        "_id" : "2",
-        "_score" : 1.0,
-        "_source" : {
-          "name" : "Jane Doe"
-        }
-      },
-      {
-        "_index" : "customer",
-        "_type" : "_doc",
-        "_id" : "1",
-        "_score" : 1.0,
-        "_source" : {
-          "name" : "John Doe"
-        }
+    "hits" : [{
+      "_index" : "bank",
+      "_type" : "customer",
+      "_id" : "1",
+      "_score" : 1.0,
+      "_source" : {
+        "name" : "John Doe"
       }
-    ]
+    }, {
+      "_index" : "bank",
+      "_type" : "customer",
+      "_id" : "2",
+      "_score" : 1.0,
+      "_source" : {
+        "name" : "Jane Doe"
+      }
+    }]
   }
 }
 ```
@@ -118,14 +116,14 @@ $ curl -XGET "localhost:9200/customer/_doc/_search?pretty&pretty"
 直接看示例：
 
 ```bash
-$ curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Type: application/json' -d'
+$ curl -X POST "localhost:9200/bank/customer/_bulk?pretty" -H 'Content-Type: application/json' -d'
 {"update":{"_id":"1"}}
 {"doc": { "name": "John Doe becomes Jane Doe" } }
 {"delete":{"_id":"2"}}
 '
 ```
 
-将索引 `customer` 下的文档 `ID` 为 1 的数据进行一次修改。并删除 `ID` 为 2 的数据。执行后做一次查询：
+将索引 bank 下的 customer 文档中 ID 为 1 的数据进行一次修改。并删除 ID 为 2 的数据。执行后做一次查询：
 
 ```json
 {
@@ -140,22 +138,20 @@ $ curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Ty
   "hits" : {
     "total" : 1,
     "max_score" : 1.0,
-    "hits" : [
-      {
-        "_index" : "customer",
-        "_type" : "_doc",
-        "_id" : "1",
-        "_score" : 1.0,
-        "_source" : {
-          "name" : "John Doe becomes Jane Doe"
-        }
+    "hits" : [{
+      "_index" : "bank",
+      "_type" : "customer",
+      "_id" : "1",
+      "_score" : 1.0,
+      "_source" : {
+        "name" : "John Doe becomes Jane Doe"
       }
-    ]
+    }]
   }
 }
 ```
 
-可以看到，`id` 为 1 的数据已经修改成功，并且 `ID` 为 2 的数据被删除。
+可以看到，ID 为 1 的数据已经修改成功，并且 ID 为 2 的数据被删除。
 
 # JSON 文件批量数据导入
 
@@ -177,44 +173,24 @@ $ curl -X POST "localhost:9200/customer/_doc/_bulk?pretty&pretty" -H 'Content-Ty
 }
 ```
 
-准备好一个 JSON 文件的数据：[accounts.json](./_simple/accounts.json)（可以右键在新标签页预览保存）。
+准备好一个 JSON 文件的数据：[accounts.json](./_file/accounts.json)（可以右键在新标签页预览保存）。
 
 假设我将 `accounts.json` 文件放在 `_simple` 文件下，执行命令如下所示：
 
 ```bash
-$ curl -XPOST "localhost:9200/bank/_doc/_bulk?pretty&refresh" -H "Content-Type: application/json" --data-binary "@_simple/accounts.json"
+$ curl -XDELETE "localhost:9200/bank?pretty"
+$ curl -XPOST "localhost:9200/bank/customer/_bulk?pretty&refresh" -H "Content-Type: application/json" --data-binary "@_file/accounts.json"
 ```
 
 看下索引信息：
 
 ```bash
-$ curl "localhost:9200/_cat/indices?v&pretty"
+$ curl -XGET "localhost:9200/_cat/indices?v"
 
-health status index                         uuid                   pri rep docs.count docs.deleted store.size pri.store.size
-green  open   .watcher-history-7-2019.10.25 d4zSGgcKT1CDV6LGbTar8Q   1   0       1290            0      1.3mb          1.3mb
-green  open   .watches                      Bptdm6_ASx69bYYJ495nvw   1   0          6            0     75.4kb         75.4kb
-green  open   .monitoring-es-6-2019.10.25   3-Km-OaRQZ20NVJN8tDxqA   1   0      18598           86      7.6mb          7.6mb
-green  open   .monitoring-alerts-6          Qb7JbFCNTy-l-lAyBiMADg   1   0          1            0     12.3kb         12.3kb
-yellow open   bank                          uPmk8dAGTuK6WdEXizSN9A   5   1       1000            0    474.6kb        474.6kb
-green  open   .watcher-history-7-2019.10.21 rC7xOKLQTXaDLDLV_cQ05Q   1   0       2758            0      3.4mb          3.4mb
-green  open   .kibana                       G6D_RxaGR5CGeHKdGp_GKw   1   0          1            0        4kb            4kb
-green  open   .triggered_watches            9H35HOwtTUCGcjrH2lI3bQ   1   0          0            0    171.2kb        171.2kb
-yellow open   theme                         XFijZlW2RfmdWkJ53oDI0A   5   1          2            0      8.2kb          8.2kb
-green  open   .monitoring-es-6-2019.10.23   L_QsqDKFS6GibnIkYa2IKg   1   0       1548           18    893.9kb        893.9kb
-green  open   .watcher-history-7-2019.10.24 -708MKfjSvqvi6Q5Dj6cKQ   1   0        234            0    348.1kb        348.1kb
-yellow open   customer                      1GGdxUTARUKVrr5fzA5w_w   5   1          1            0      4.5kb          4.5kb
-green  open   .monitoring-es-6-2019.10.22   iygh5IibSbaFDxTE9RyQOA   1   0      14941           35      5.9mb          5.9mb
-green  open   .monitoring-es-6-2019.10.24   gh3afcsRTZmAnQTkUz8N3A   1   0       2823           77      1.7mb          1.7mb
-green  open   .watcher-history-7-2019.10.22 zfWVREXaT8GWMnKPZkQDbw   1   0       1590            0      1.7mb          1.7mb
-green  open   .watcher-history-7-2019.10.23 RSGz4iW1TR6wKfgYUmVXfw   1   0        192            0    325.2kb        325.2kb
+health status index   uuid                   pri rep docs.count docs.deleted store.size pri.store.size
+yellow open   bank    IBxsiHSLSXeblvdxM4KQIA   1   1       1000            0    414.2kb        414.2kb
+yellow open   twitter VJJqMaxUT0qhW_HAbKlHBw   1   1          3            0      4.9kb          4.9kb
 ```
 
-下面这条就是我们刚批量插入的数据索引信息：
+可以在 bank 索引下看到我们刚才新增的 1000 条客户数据。
 
-```
-health status index                         uuid                   pri rep docs.count docs.deleted store.size pri.store.size
-......
-yellow open   bank                          uPmk8dAGTuK6WdEXizSN9A   5   1       1000            0    474.6kb        474.6kb
-```
-
-这条信息显示我们刚刚在 `bank` 索引插入了 1000 条数据（在 `_doc` 下`） 

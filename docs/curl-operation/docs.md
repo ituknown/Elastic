@@ -85,7 +85,7 @@ POST /Index/Type</ID>(?v&pretty)
 现在使用 `PUT` 方式向 twitter 索引中添加一条数据，用户名称为 David，指定的 ID 为 2：
 
 ```bash
-curl -XPUT "localhost:9200/twitter/user/2?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPUT "localhost:9200/twitter/user/2?pretty" -H "Content-Type: application/json" -d'
 {
   "name": "David"
 }'
@@ -117,7 +117,7 @@ curl -XPUT "localhost:9200/twitter/user/2?pretty" -H "Content-Type: application/
 使用 `POST` 方式添加一条自增 ID 数据，用户名称为 Alicia。
 
 ```bash
-curl -XPOST "localhost:9200/twitter/user?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPOST "localhost:9200/twitter/user?pretty" -H "Content-Type: application/json" -d'
 {
   "name": "Alicia"
 }'
@@ -145,7 +145,7 @@ curl -XPOST "localhost:9200/twitter/user?pretty" -H "Content-Type: application/j
 从上面的示例可以看到，数据添加成功了，并且使用 `POST` 方式添加的 ID 为：`5JBq73UB5Tq_xcodMhFf`。现在可以使用 `GET` 命令查询来验证是否成功插入，查询一下自增id看看查询结果：
 
 ```bash
-curl -XGET "localhost:9200/twitter/user/5JBq73UB5Tq_xcodMhFf?pretty"
+$ curl -XGET "localhost:9200/twitter/user/5JBq73UB5Tq_xcodMhFf?pretty"
 ```
 
 ```json
@@ -174,7 +174,7 @@ PUT/POST /Index/Type/ID(?v&pretty)
 现在，我们先增加一条数据：
 
 ```bash
-curl -XPUT "localhost:9200/twitter/user/3?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPUT "localhost:9200/twitter/user/3?pretty" -H "Content-Type: application/json" -d'
 {
   "name": "Bob",
   "age" : 18
@@ -184,7 +184,7 @@ curl -XPUT "localhost:9200/twitter/user/3?pretty" -H "Content-Type: application/
 向文档中增加一条数据，包含名称与年龄。执行后使用 `GET`输出如下：
 
 ```bash
-curl -XGET "localhost:9200/twitter/user/3?pretty"
+$ curl -XGET "localhost:9200/twitter/user/3?pretty"
 ```
 
 ```json
@@ -205,7 +205,7 @@ curl -XGET "localhost:9200/twitter/user/3?pretty"
 
 现在再来执行如下指令试试结果：
 ```bash
-curl -XPUT "localhost:9200/twitter/user/3?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPUT "localhost:9200/twitter/user/3?pretty" -H "Content-Type: application/json" -d'
 {
   "name": "Linda"
 }'       
@@ -245,7 +245,7 @@ POST /<Index>/<Type>/<ID>/_update?pretty
 以上面的文档中 ID 为 3 的数据为例，先将 `Linda` 替换为 `Bob`：
 
 ```bash
-curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: application/json" -d'
 {
   "doc": { "name": "Bob" }
 }'
@@ -254,7 +254,7 @@ curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: app
 执行后再获取该文档数据：
 
 ```bash
-curl -XGET "localhost:9200/twitter/user/3?pretty"
+$ curl -XGET "localhost:9200/twitter/user/3?pretty"
 ```
 
 ```json
@@ -275,7 +275,7 @@ curl -XGET "localhost:9200/twitter/user/3?pretty"
 可以看到，数据 `Linda` 被修改为 `Bob`。等等，真的是修改吗？万一是替换呢？再来，我们在来在该数据上增加一个年龄字段：
 
 ```bash
-curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: application/json" -d'
 {
   "doc": { "age": 18 }
 }'
@@ -302,7 +302,7 @@ curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: app
 这说明确实是修改，并且修改成功。现在，我还想修改一下年龄，我想给年龄增加 10 岁。看下下面的语句：
 
 ```bash
-curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPOST "localhost:9200/twitter/user/3/_update?pretty" -H "Content-Type: application/json" -d'
 {
   "script": "ctx._source.age += 10"
 }'
@@ -343,7 +343,7 @@ DELETE /Index/Type/ID(?v&pretty)
 现在来删除索引 `twitter` 文档类型为 `user`  ID 为 3 的数据：
 
 ```bash
-curl -XDELETE "localhost:9200/twitter/user/3?pretty"
+$ curl -XDELETE "localhost:9200/twitter/user/3?pretty"
 ```
 
 执行结果如下：
@@ -374,7 +374,7 @@ curl -XDELETE "localhost:9200/twitter/user/3?pretty"
 比如我当前 twitter 索引下有个 user 类型的文档。我现在想要再创建一个 customer 类型的文档数据：
 
 ```bash
-curl -XPUT "localhost:9200/twitter/customer/1?pretty" -H "Content-Type: application/json" -d'
+$ curl -XPUT "localhost:9200/twitter/customer/1?pretty" -H "Content-Type: application/json" -d'
 {
   "name": "David"
 }'
