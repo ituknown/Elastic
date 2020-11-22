@@ -2,9 +2,7 @@
 
 Elasticsearch 分为解压版（`tar.gz`）以及包管理安装版（二进制安装版）两个安装版本，本篇会分别进行介绍，不过在实际使用中我更喜欢使用解压版。
 
-Elasticsearch 更新周期很快，而且每个 Release 版本都会增加一些特性，所以安装时建议安装最新 Release 版本，可以点击下面的链接查看所有 Release 版本列表：
-
-Release 版本文档列表：https://www.elastic.co/guide/en/elastic-stack/index.html
+Elasticsearch 更新周期很快，而且每个 Release 版本都会增加一些特性，所以安装时建议安装最新 Release 版本，可以点击链接查看所有 Release 版本列表：[Release 版本文档列表](https://www.elastic.co/guide/en/elastic-stack/index.html)
 
 每个 Release 版本都对应 Elasticsearch、Kibana、Logstash、Beats、APM Server 以及 Elasticsearch Hadoop 等产品。
 
@@ -20,9 +18,12 @@ Release 版本文档列表：https://www.elastic.co/guide/en/elastic-stack/index
 
 ## 下载解压文件：
 
-确定好安装目录，这里将我要安装的目录是 `/opt/elastic`，进入目录后执行如下命令进行下载压缩文件。
+确定好安装目录（这里我要安装的目录是 `/opt/elastic`）进入目录后执行 `wget` 命令进行下载压缩文件。
 
 ```bash
+$ pwd
+/opt/elastic
+
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.5.2-linux-x86_64.tar.gz
 ```
 
@@ -50,14 +51,12 @@ shasum -a 512 -c elasticsearch-7.5.2-linux-x86_64.tar.gz.sha512
 elasticsearch-{version}-linux-x86_64.tar.gz: OK
 ```
 
-**执行该命令可能会遇到如下问题：**
-
-| shasum: command not found                                    |
-|:------------------------------------------------------------ |
+| shasum: command not found？                                  |
+| :----------------------------------------------------------- |
 | 该问题原因是 `shasum` 在 CentOS 上被称为 `sha1sum`。该文件在 `/bin` 目录下，我们直接使用软连接进行命名为 `shasum` 即可：`sudo ln -s /bin/sha1sum /bin/shasum` |
 
-| shasum: invalid option -- 'a'                                |
-|:------------------------------------------------------------ |
+| shasum: invalid option -- 'a'？                              |
+| :----------------------------------------------------------- |
 | 该问题原因是缺少软件包 `perl-Digest-SHA`，使用 `YUM` 安装即可：`sudo yum install -y perl-Digest-SHA` |
 
 ## 安装与用户配置
@@ -65,13 +64,10 @@ elasticsearch-{version}-linux-x86_64.tar.gz: OK
 一切准备就绪之后就可以进行加压安装了：
 
 ```bash
-$ pwd
-/opt/elastic
-
 tar -xzvf elasticsearch-7.5.2-linux-x86_64.tar.gz
 ```
 
-之后建立一个软连接（可选操作，我是为了方便才创建软连接的）：
+之后建立一个软连接（可选操作，我是为了方便指定不同版本才创建软连接的）：
 
 ```bash
 sudo ln -s elasticsearch-7.5.2 es
@@ -79,10 +75,16 @@ sudo ln -s elasticsearch-7.5.2 es
 
 Elasticsearch 与所有软件一样，可执行文件都在 bin 目录下，配置文件在 config 目录下。
 
+```bash
+$ cd es
+$ ls
+LICENSE.txt  NOTICE.txt  README.asciidoc  bin  config  jdk  lib  logs  modules  plugins
+```
+
 基本上到这里 Elasticsearch 就安装好了，不过我们还可以继续设置一下环境变量：
 
 ```bash
-sudo vim /etc/profile
+elasticsudo vim /etc/profile
 
 export ES_HOME=/opt/elastic/es
 export PATH=$PATH:/$ES_HOME/bin
@@ -93,7 +95,7 @@ source /etc/profile
 需要说明的是，Elasticsearch 并不支持 root 用户登录，所以我们需要创建一个新用户（也可以直接使用一个已有的非 root 用户）：
 
 ```bash
-sudo groupadd es
+elasticsudo groupadd es
 sudo useradd -g es es
 ```
 
@@ -109,7 +111,28 @@ sudo chmod 774 /opt/elastic
 
 ## 系统参数与配置文件修改
 
-因为刚安装，所以我们需要简单的修改下配置文件，编辑 config 目录下的 `elasticsearch.yml`。修改如下两个配置属性：
+Elasticsearch 的所有配置文件都在 config 目录下：
+
+```bash
+$ ls config/
+elasticsearch.keystore  jvm.options        role_mapping.yml  users
+elasticsearch.yml       log4j2.properties  roles.yml         users_roles
+```
+
+其中最重要的两个配置文件是 `jvm.options` 和 `elasticsearch.yml`。从配置文件中也可以看出来，Elasticsearch 依赖于 JVM。当然，Elasticsearch 安装包中内置的有推荐的 JVM 版本。如果不想使用内置的也可以自己在环境中进行安装一个，然后在环境变量中配置 `JAVA_HOME` 即可。
+
+在对 Elasticsearch 不熟悉的情况下我们只需要知道 `jvm.options` 中默认配置的内存大小是1g：
+
+```
+-Xms1g
+-Xmx1g
+```
+
+所以，如果当前机器没有足够的内存的话记得进行相应修改。修改时要注意，堆最小内存（`Xms`）与最大内存（`Xmx`）要保持一致，原因在后续文章中会进行说明。
+
+另外，Elasticsearch 默认的 web 端口号是 9200。包括数据存储目录以及日志存储目录、集群名称都在 `elasticsearch.yml` 文件中进行配置。
+
+这里我就只修改下如下两个配置：
 
 ```properties
 path.data: /var/es/data
@@ -118,9 +141,9 @@ path.logs: /var/es/logs
 
 这两个属性默认是注释的，`path.data` 指的是数据的存储目录，`path.logs` 指的是日志的输出目录。
 
-这两个值得目录是随意的，可以指定到任意目录，注意使用绝对路径。
+这两个值得目录是随意的，可以指定到任意目录，注意使用绝对路径。（修改这两个配置原因是可以明确控制数据目录，之后如果进行升级也不用担心数据会丢失。当然，你也可以不修改使用默认的就好。）
 
-然后在 `/var` 目录下创建一个 `es` 文件夹并将所属用户和读写执行权限（其他用户只有读权限）都设置给新创建的 `es` 用户：
+在 `/var` 目录下创建一个 `es` 文件夹并将所属用户和读写执行权限（其他用户只有读权限）都设置给新创建的 `es` 用户：
 
 ```bash
 sudo mkdir -p /var/es
@@ -172,10 +195,6 @@ elasticsearch -d -p <pid_file>
 
 其中 `-d` 指的是允许在后台运行，`-p` 指的是将运行成功的进程 id 放到执行文件中，这两个参数都是可选的。
 
-| 注意                                                         |
-|:------------------------------------------------------------ |
-| Elasticsearch 基于 JVM（默认使用内置，我们先暂时不管直接使用内置的即可），在启动时的默认堆大小为 1g。所以，如果操作系统内存无法满足默认设置修改 config 文件夹下的 `jvm.options` 文件。其他参数先不管，直接修改 `-Xms1g` 和 `-Xmx1g` 为合适的内存大小。堆内存最大值与最小值一定要相同，原因在之后的文章中会进行说明。 |
-
 现在就可以使用进程查看命令查看是否启动成功，示例：
 
 ```bash
@@ -184,6 +203,20 @@ $ ps -ef | grep elastic | grep -v grep
 es         8748      1  1 14:14 pts/0    00:02:11 //opt/elastic/es/jdk/bin/java -Des.networkaddress.cache.ttl=60 -Des.networkaddress.cache.negative.ttl=10 -XX:+AlwaysPreTouch -Xss1m -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Djna.nosys=true -XX:-OmitStackTraceInFastThrow -Dio.netty.noUnsafe=true -Dio.netty.noKeySetOptimization=true -Dio.netty.recycler.maxCapacityPerThread=0 -Dio.netty.allocator.numDirectArenas=0 -Dlog4j.shutdownHookEnabled=false -Dlog4j2.disable.jmx=true -Djava.locale.providers=COMPAT -Xms1g -Xmx1g -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+UseCMSInitiatingOccupancyOnly -Djava.io.tmpdir=/tmp/elasticsearch-603325604387781353 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=data -XX:ErrorFile=logs/hs_err_pid%p.log -Xlog:gc*,gc+age=trace,safepoint:file=logs/gc.log:utctime,pid,tags:filecount=32,filesize=64m -XX:MaxDirectMemorySize=536870912 -Des.path.home=//opt/elastic/es -Des.path.conf=//opt/elastic/es/config -Des.distribution.flavor=default -Des.distribution.type=tar -Des.bundled_jdk=true -cp //opt/elastic/es/lib/* org.elasticsearch.bootstrap.Elasticsearch -d
 es         8764   8748  0 14:14 pts/0    00:00:00 /opt/elastic/es/modules/x-pack-ml/platform/linux-x86_64/bin/controller
 ```
+
+现在使用 curl 请求测试一下：
+
+```bash
+$ curl -XGET "localhost:9200/_cat/health?v"
+epoch      timestamp cluster       status node.total node.data shards pri relo init unassign pending_tasks max_task_wait_time active_shards_percent
+1606018039 04:07:19  elasticsearch green           1         1      0   0    0    0        0             0                  -                100.0%
+```
+
+如果得到上面的输出即表示成功运行，到此基于解压版的安装方式就说完了。
+
+| 我的 status 对应的状态值不是 green？                         |
+| :----------------------------------------------------------- |
+| 这个不用担心，你的可能是 yellow。这个是因为集群问题或某些数据存在问题，这个并不影响使用。 |
 
 
 
