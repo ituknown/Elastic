@@ -1,6 +1,14 @@
 # 前言
 
-Elastic 的所有数据操作都基于索引（`indices`）。在 Elastic 的概念中，索引可以理解为关系型数据库的库名。在索引下面又分类型（`Type`），可以将类型理解为关系型数据库的数据表（`Table`）。
+想一下，我们之前使用关系型数据库 MySQL 时是如果存储数据的？我们首先是不是创建一个数据库，如下：
+
+```mysql
+CREATE DATABASES <DB_NAME>;
+```
+
+同样的，在 Elasticsearch 中想要存储数据首先也要有 “库”。不过，在 Elasticsearch 中不叫库，而是叫做索引（`indices`）。
+
+Elasticsearch 的所有数据操作都基于索引（`indices`）。在 Elasticsearch 的概念中，索引可以理解为关系型数据库的库名。在索引下面又分类型（`Type`），可以将类型理解为关系型数据库的数据表（`Table`）。
 
 下面就来看下索引的基本操作。
 
