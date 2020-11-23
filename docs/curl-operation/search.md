@@ -1,14 +1,14 @@
 # 前言
 
-使用 Elastic 的初衷就是因为它强大的数据查找功能。前面说了如何操作文档数据，包括新增、替换、修改、删除以及获取文档数据。这些基础 API 都是为了
-Elastic 的 `_search` API 做铺垫。
+使用 Elasticsearch 的初衷就是因为它强大的数据查找功能。前面说了文档数据的添加、替换、修改、删除以及获取文档数据基础 API，而这些基础 API 都是为了Elasticsearch 的 `_search` API 做铺垫。
 
-本节所有的数据查找操作都以 [数据批处理](./batch.md) `bank` 索引数据为前提。如果还没有导入 `accounts.json` 文件中的数据需要先进行导入。
+本节所有的数据查找操作都以 [数据批处理](./batch.md) 中在最后批量导入 bank 索引的数据为前提。如果还没有导入 `accounts.json` 文件中的数据需要先进行导入。
 
 # _search API
 
-Elastic 的 `_search` 有两种使用方式：`REST request URI` 和 `REST request body`。`REST request URI` 方式就是将查找的数据条件直接拼
-接在请求 `url` 中，而 `REST request body` 则是将数据放在请求体中，格式为 `JSON`。
+Elasticsearch 的 `_search` 有使用方式有两种风格：`REST request URI` 和 `REST request body`。
+
+`REST request URI` 方式就是将查找的数据条件直接拼接在请求 `url` 中，而 `REST request body` 则是将数据放在请求体中，格式为 `JSON`。
 
 `_search` API 请求格式一般如下：
 
@@ -24,10 +24,8 @@ $ curl -XGET "localhost:9200/bank/_search?q=*&sort=account_number:asc&pretty"
 
 在平时使用搜索引擎查找数据时注意看请求地址栏的数据信息，对这个查找应该不陌生。现在就来说下具体含义：
 
-- `q=*`：查找 `bank` 索引下的所有文档数据。这里的所有指的是文档类型，通常我们都会将文档数据放置在 `_doc` 类型下。这里的 `q=*` 就是匹配该索引
-下所有类型的文档数据。
-- `sort=account_number:asc`：查找 `bank` 索引下所有的文档数据，并按照文档数据的 `account_number` 字段进行倒叙排序。这就类似于关系型数据
-库 MySQL 的 `ORDER BY FIELD ASC`。
+- `q=*`：查找 bank 索引下的所有文档数据。
+- `sort=account_number:asc`：查找 bank 索引下所有的文档数据，并按照文档数据的 `account_number` 字段进行倒叙排序。这就类似于关系型数据库 MySQL 的 `ORDER BY FIELD ASC`。
 
 现在来看下查询结果：
 
@@ -81,8 +79,7 @@ $ curl -XGET "localhost:9200/bank/_search?q=*&sort=account_number:asc&pretty"
   + `hits`：数据返回集，默认返回10条，可以在查询是使用 `size` 参数进行指定。
   + `sort`：排序序列，类似于索引（从 0 开始）
 
-可以看到，直接使用 `REST request URI` 的形式进行查找数据不利于阅读。现在再来看下使用 `REST request body` 的写法，将上面相同的查询条件直接
-是用 `body` 形式替换如下：
+可以看到，直接使用 `REST request URI` 的形式进行查找数据不利于阅读。现在再来看下使用 `REST request body` 的写法，将上面相同的查询条件直接是用 `body` 形式替换如下：
 
 ```bash
 $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/json" -d'
@@ -94,13 +91,11 @@ $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/
 }'
 ```
 
-这里 `query` 就是指定的查询条件。`match_all` 指定查询 `bank` 索引下所有文档数据。`sort` 为排序，可以看到，接受的是一个数组，所以可以指定多个
-字段进行排序。
+这里 `query` 就是指定的查询条件。`match_all` 指定查询 `bank` 索引下所有文档数据。`sort` 为排序，可以看到，接受的是一个数组，所以可以指定多个字段进行排序。
 
 # 每页查询数量
 
-在上面我们在查询是指定的查询条件是查询所有文档数据 `match_all`，并且按照 `account_number` 字段进行倒叙排序。响应结果虽然命中了 1000 条，实际
-返回了 10 条数据。这是因为 Elastic 在查询条件时如果不指定查询数量将默认查询 10 条，现在我想查询 20 条：
+在上面我们在查询时指定的查询条件是查询所有文档数据 `match_all`，并且按照 `account_number` 字段进行倒叙排序。响应结果虽然命中了 1000 条，实际返回了 10 条数据。这是因为 Elasticsearch 在查询条件时如果不指定查询数量将默认查询 10 条，现在我想查询 20 条：
 
 ```bash
 $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/json" -d'
@@ -117,8 +112,7 @@ $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/
 
 # 分页
 
-Elastic 既然有 `size` 参数，同样肯定会有一个 `from` 参数。`size` 指定了每页查询数量，`from` 则指定从第一条开始查找。看下下面的示例，从第 10
-条开始查询，向后查询10条：
+Elasticsearch 既然有 `size` 参数，同样肯定会有一个 `from` 参数。`size` 指定了每页查询数量，`from` 则指定从第一条开始查找。看下下面的示例，从第 10 条开始查询，向后查询10条：
 
 ```bash
 $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/json" -d'
@@ -153,8 +147,7 @@ $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/
 
 # 返回指定字段
 
-通常，一个文档数据包含众多字段。在一次查询中我们一般都仅仅需要其中几个字段。如果直接返回全部字段一方面会降低系统响应速度（尽管微乎其微），另一方面
-则会占用网络带宽。
+通常，一个文档数据包含众多字段。在一次查询中我们一般都仅仅需要其中几个字段。如果直接返回全部字段一方面会降低系统响应速度（尽管微乎其微），另一方面则会占用网络带宽。
 
 如关系型数据库查询语句：
 
@@ -168,8 +161,8 @@ select name, age from user
 ```bash
 $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/json" -d'
 {
-  "query": { "match_all": {}},
   "_source": ["account_number", "balance"],
+  "query": { "match_all": {}},
   "size": 1
 }'
 ```
@@ -213,7 +206,7 @@ $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/
 
 ```json
 {
-  "query": {"match_all": {}}
+  "query": {"match_all": {}} 
 }
 ```
 
@@ -347,7 +340,7 @@ $ curl -XGET "localhost:9200/bank/_search?pretty" -H "Content-Type: application/
 select * from uesr where age between 18 and 22;
 ```
 
-在 Elastic 想要实现范围查找需要借助 `filter` 条件过滤（`filter` 下需要使用 `range` ）。
+Elasticsearch 想要实现范围查找需要借助 `filter` 条件过滤（`filter` 下需要使用 `range` ）。
 
 现在，我要查询所有文档数据中 `balance` 值在 20000 ~ 30000 之间的数据（包含 20000 和 30000）可以使用如下语句：
 
