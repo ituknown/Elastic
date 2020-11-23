@@ -13,7 +13,7 @@ PUT /<Indices>(?v&pretty)
 比如是你本地的 Elasticsearch 服务器，那么该请求就是：
 
 ```
-PUT localhost:9200/<Indeices>(?v&pretty)
+PUT localhost:9200/<Indices>(?v&pretty)
 ```
 
 如果是远程服务，就将对应的 IP 替换为远程机器 IP 即可。后面的 `?v&pretty` 指的是可选参数，`v` 值得是 `verbose` 的意思，对于获取数据（`GET` 请求）返回类似于 Table 形式的数据建议使用 `v` 。而对于使用 JSON 形式的请求（无论查询还是修改）就使用 `pretty` 参数。
