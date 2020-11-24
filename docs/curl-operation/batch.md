@@ -175,7 +175,7 @@ $ curl -X POST "localhost:9200/bank/customer/_bulk?pretty" -H 'Content-Type: app
 
 准备好一个 JSON 文件的数据：[accounts.json](./_file/accounts.json)（可以右键在新标签页预览保存）。
 
-假设我将 `accounts.json` 文件放在 `_simple` 文件下，执行命令如下所示：
+假设我将 `accounts.json` 文件放在 `_file` 文件下，执行命令如下所示：
 
 ```bash
 $ curl -XDELETE "localhost:9200/bank?pretty"
